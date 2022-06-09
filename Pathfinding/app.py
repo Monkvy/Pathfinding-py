@@ -37,6 +37,12 @@ class Application:
         # The current algorithm
         self.algorithm = AStar(self.grid)
 
+        # All tools (the tool at index 0 is the current tool)
+        self.tools = ['start', 'end', 'barrier', 'move']
+
+        # Variable for node the user is currently moving
+        self.moving_node = None
+
 
     def run(self):
         '''
@@ -48,31 +54,63 @@ class Application:
                 if event.type == pygame.QUIT:
                     self.running = False
 
+                mouse_pos = pygame.mouse.get_pos()
+
                 # Create a new node
                 if pygame.mouse.get_pressed()[0] and not self.started:
                     # Get the position of the mouse click
-                    node_pos = clickedGridPos(event.pos, self.grid)
+                    node_pos = clickedGridPos(mouse_pos, self.grid)
                     node = self.grid.getNode(node_pos[1], node_pos[0])
 
                     # Only create nodes if the user has selected a empty node
                     if node.type == 'idle':
+                        match self.tools[0]:
 
-                        # If the grid does not contain a start node, create one
-                        if not any(node.type == 'start' for row in self.grid.content for node in row):
-                            if event.type == pygame.MOUSEBUTTONDOWN:
-                                node.type = 'start'
-                        
-                        # If the grid does not contain an end node, create one
-                        elif not any(node.type == 'end' for row in self.grid.content for node in row):
-                            if event.type == pygame.MOUSEBUTTONDOWN:
-                                node.type = 'end'
+                            # Create start node
+                            case 'start':
+                                if event.type == pygame.MOUSEBUTTONDOWN:
+                                    if len(self.grid.getNodeByType('start')) > 0:
+                                        self.grid.getNodeByType('start')[0].type = 'idle'
+                                    node.type = 'start'
+                            
+                            # Create end node
+                            case 'end':
+                                if event.type == pygame.MOUSEBUTTONDOWN:
+                                    if len(self.grid.getNodeByType('end')) > 0:
+                                        self.grid.getNodeByType('end')[0].type = 'idle'
+                                    node.type = 'end'
 
-                        # If the grid already contains a start and end node, create a barrier
-                        else: node.type = 'barrier'
+                            # Create a barrier
+                            case 'barrier': 
+                                node.type = 'barrier'
+
+                # Move a node
+                if pygame.mouse.get_pressed()[0] and (self.tools[0] == 'move'):
+                    node_pos = clickedGridPos(mouse_pos, self.grid)
+                    node = self.grid.getNode(node_pos[1], node_pos[0])
+
+                if (event.type == pygame.MOUSEBUTTONDOWN) and (self.moving_node == None):
+                    node_pos = clickedGridPos(mouse_pos, self.grid)
+                    node = self.grid.getNode(node_pos[1], node_pos[0])
+
+                    # Only move nodes if the user has selected a node
+                    if (event.button == 1) and (node.type != 'idle') and (self.tools[0] == 'move'):
+                        self.moving_node = node
+                
+                if (event.type == pygame.MOUSEBUTTONUP) and (self.moving_node != None):
+                    node_pos = clickedGridPos(mouse_pos, self.grid)
+                    node = self.grid.getNode(node_pos[1], node_pos[0])
+
+                    # Only move nodes if the user has selected a node
+                    if event.button == 1:
+                        if node.type == 'idle':
+                            node.type = self.moving_node.type
+                            self.moving_node.type = 'idle'
+                        self.moving_node = None
                 
                 # Remove a node
                 elif pygame.mouse.get_pressed()[2] and not self.started:
-                    node_pos = clickedGridPos(event.pos, self.grid)
+                    node_pos = clickedGridPos(mouse_pos, self.grid)
                     node = self.grid.getNode(node_pos[1], node_pos[0])
                     node.type = 'idle'
 
@@ -91,17 +129,41 @@ class Application:
                             if not self.algorithm.run(self.grid): self.started = False
                         
                         else:
-                            self.started = False
-                            self.algorithm.reset()
-                            self.grid.reset()
+                            self.algorithm.running = not self.algorithm.running
+
+                    elif event.key == pygame.K_r:
+                        self.started = False
+                        self.algorithm.reset()
+                        self.grid.reset()
+
+                    # Switch tools
+                    elif event.key == pygame.K_UP:
+                        # Append the current tool to the end of the list and remove the first element (the current tool)
+                        self.tools.append(self.tools.pop(0))
+                    elif event.key == pygame.K_DOWN:
+                        # Append the current tool to the start of the list and remove the last element (the current tool)
+                        self.tools.insert(0, self.tools.pop())
+
+
+            # Reset the moving node to avoid bugs
+            if self.tools[0] != 'move':
+                self.moving_node = None
 
 
             # Execute the algorithm
             self.algorithm.update()
 
-
             self.screen.fill((0, 0, 0))
             self.grid.draw(self.screen)
+
+            # Draw outlines if the user is moving a node
+            if self.moving_node != None:
+                self.moving_node.drawOutline(self.screen, self.grid.node_size, self.grid.node_margin, (0, 255, 0))
+                
+                # Draw the outline of the node, the user is moving to
+                node_pos = clickedGridPos(mouse_pos, self.grid)
+                node = self.grid.getNode(node_pos[1], node_pos[0]).drawOutline(self.screen, self.grid.node_size, self.grid.node_margin, (0, 255, 0))
+
 
             # Fps & display
             pygame.display.flip()

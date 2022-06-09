@@ -90,7 +90,6 @@ class AStar:
         if current == self.end:
             self.running = False
             self.reconstruct_path()
-            print(self.start.type, self.end.type)
             return
 
         for neighbour in current.neighbours:

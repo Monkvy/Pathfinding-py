@@ -69,6 +69,23 @@ class Node:
             self.neighbours.append(grid.getNode(self.row, self.column - 1))
 
 
+    def drawOutline(self, surface: pygame.Surface, size: int, margin: int, color: pygame.Color):
+        '''
+        Draw the outline of the node.
+
+        Args:
+            * surface (pygame.Surface) - The surface to draw on.
+            * size (int) - The size of the node.
+            * margin (int) - The margin between the nodes.
+            * color (pygame.Color) - The color of the outline.
+        '''
+
+        x = self.column * (size + margin) - margin
+        y = self.row * (size + margin) - margin
+
+        pygame.draw.rect(surface, color, (x, y, size + margin * 2, size + margin * 2), 1)
+
+
     def draw(self, surface: pygame.Surface, size: int, margin: int):
         '''
         Draw the node on the surface.

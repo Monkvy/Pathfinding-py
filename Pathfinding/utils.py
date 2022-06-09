@@ -1,4 +1,11 @@
-import pygame
+
+
+def constrain(value: float | int, min_val: float | int, max_val: float | int) -> float | int:
+    '''
+    Constrains a value between a minimum and maximum value.
+    '''
+    
+    return min(max_val, max(min_val, value))
 
 
 def h(point1: tuple, point2: tuple) -> int:
@@ -26,5 +33,8 @@ def clickedGridPos(position: tuple, grid) -> tuple:
     Returns:
         * tuple - The position of the node. (column, row)
     '''
+    
+    col = constrain(position[0] // (grid.node_size + grid.node_margin), 0, grid.columns - 1)
+    row = constrain(position[1] // (grid.node_size + grid.node_margin), 0, grid.rows - 1)
 
-    return (position[0] // (grid.node_size + grid.node_margin), position[1] // (grid.node_size + grid.node_margin))
+    return col, row
